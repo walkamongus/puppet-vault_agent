@@ -1,0 +1,42 @@
+<%- |
+  String $user,
+  String $group,
+  Stdlib::Unixpath $config_dir,
+  Stdlib::Unixpath $vault_bin_dir,
+| -%>
+# This file is managed by Puppet and 
+# local changes may be overwritten.
+# Based on https://learn.hashicorp.com/vault/operations/ops-deployment-guide#step-3-configure-systemd
+[Unit]
+Description="HashiCorp Vault Agent"
+Documentation=https://www.vaultproject.io/docs/
+Requires=network-online.target
+After=network-online.target
+ConditionFileNotEmpty=<%= $config_dir %>/config.json
+
+[Service]
+User=<%= $user %>
+Group=<%= $group %>
+ProtectSystem=true
+ProtectHome=read-only
+PrivateTmp=yes
+PrivateDevices=yes
+SecureBits=keep-caps
+AmbientCapabilities=CAP_IPC_LOCK
+Capabilities=CAP_IPC_LOCK+ep
+CapabilityBoundingSet=CAP_SYSLOG CAP_IPC_LOCK
+NoNewPrivileges=yes
+ExecStart=<%= $vault_bin_dir %>/vault agent -config=<%= $config_dir %>/config.json
+ExecReload=/bin/kill --signal HUP $MAINPID
+KillMode=process
+KillSignal=SIGINT
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+StartLimitInterval=60
+StartLimitBurst=3
+LimitNOFILE=65536
+LimitMEMLOCK=infinity
+
+[Install]
+WantedBy=multi-user.target
