@@ -52,18 +52,18 @@ class vault_agent (
     config           => $config,
     config_dir       => $config_dir,
     purge_config_dir => $purge_config_dir,
+    require          => Class['vault_agent::install'],
   }
   contain 'vault_agent::config'
 
-  class {'vault_agent::service':
-    user          => $user,
-    group         => $group,
-    config_dir    => $config_dir,
-    vault_bin_dir => $vault_bin_dir,
+  if $manage_service {
+    class {'vault_agent::service':
+      user          => $user,
+      group         => $group,
+      config_dir    => $config_dir,
+      vault_bin_dir => $vault_bin_dir,
+      subscribe     => Class['vault_agent::config'],
+    }
+    contain 'vault_agent::service'
   }
-  contain 'vault_agent::service'
-
-  Class['vault_agent::install']
-  -> Class['vault_agent::config']
-  ~> Class['vault_agent::service']
 }
